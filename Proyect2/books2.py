@@ -1,5 +1,5 @@
 from fastapi import  FastAPI, Body
-
+from pydantic import BaseModel
 app = FastAPI()
 
 class Libro:
@@ -20,6 +20,17 @@ class Libro:
 		self.published_date = published_date
 
 
+class LibroRequest(BaseModel):
+	id: int
+	title: str
+	author: str
+	description: str
+	rating: int
+	published_date: int
+
+
+
+
 
 BOOKS = [
     Libro(1, 'Computer Science Pro', 'codingwithroby', 'A very nice book!', 5, 2030),
@@ -36,6 +47,9 @@ async def mostrar_libros():
 
 
 @app.post("/crear-libro")
-async def crear_libro(libro_request=Body()):
-	BOOKS.append(libro_request)
+async def crear_libro(libro_request: LibroRequest):
+	new_libro = Libro(**libro_request.model_dump())
+	print(type(new_libro))
+	BOOKS.append(new_libro)
+
 
