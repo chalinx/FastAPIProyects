@@ -1,5 +1,6 @@
-from fastapi import  FastAPI, Body
-from pydantic import BaseModel
+from typing_extensions import Optional
+from fastapi import  Body, FastAPI
+from pydantic import BaseModel,Field
 app = FastAPI()
 
 class Libro:
@@ -21,11 +22,11 @@ class Libro:
 
 
 class LibroRequest(BaseModel):
-	id: int
-	title: str
-	author: str
-	description: str
-	rating: int
+	id: Optional[int] = None
+	title: str = Field(min_length=3)
+	author: str = Field(min_length=1)
+	description: str = Field(min_length=1,max_length=100)
+	rating: int = Field(gt=0,lt=6)#entre <0,6> entero = [1,5]
 	published_date: int
 
 
@@ -50,6 +51,9 @@ async def mostrar_libros():
 async def crear_libro(libro_request: LibroRequest):
 	new_libro = Libro(**libro_request.model_dump())
 	print(type(new_libro))
-	BOOKS.append(new_libro)
+	BOOKS.append(aumentar_Id_libro(new_libro))
 
 
+def aumentar_Id_libro(libro:Libro):
+	libro.id = 1 if len(BOOKS) == 0 else BOOKS[-1].id+1
+	return libro
