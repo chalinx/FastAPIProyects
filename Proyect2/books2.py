@@ -1,6 +1,4 @@
-from re import purge
-from typing import Self
-from fastapi import FastAPI
+from fastapi import  FastAPI, Body
 
 app = FastAPI()
 
@@ -35,3 +33,9 @@ BOOKS = [
 @app.get("/libros")
 async def mostrar_libros():
 	return BOOKS
+
+
+@app.post("/crear-libro")
+async def crear_libro(libro_request=Body()):
+	BOOKS.append(libro_request)
+
