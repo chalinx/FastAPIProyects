@@ -1,6 +1,8 @@
 from typing_extensions import Optional
 from fastapi import  Body, FastAPI
 from pydantic import BaseModel,Field
+
+from Proyect_FastAPI.Proyect1 import books
 app = FastAPI()
 
 class Libro:
@@ -57,12 +59,38 @@ BOOKS = [
 async def mostrar_libros():
 	return BOOKS
 
+@app.get("/libros/{libro_id}")
+async def obtener_libro_x_id(libro_id:int):
+	for libro in BOOKS:
+		if libro.id == libro_id:
+			return libro
+
+@app.get("/libros/")
+async def obtener_librox_rating(libro_rating:int):
+	lib_rating=[]
+	for libro in BOOKS:
+		if libro.rating == libro_rating:
+			lib_rating.append(libro)
+	return lib_rating
 
 @app.post("/crear-libro")
 async def crear_libro(libro_request: LibroRequest):
 	new_libro = Libro(**libro_request.model_dump())
 	print(type(new_libro))
 	BOOKS.append(aumentar_Id_libro(new_libro))
+
+@app.put("/libros/actualizar_libro")
+async def actualizar_libro(libro:LibroRequest):
+	for i in range(len(BOOKS)):
+		if BOOKS[i].id == libro.id:
+			BOOKS[i] = Libro(**libro.model_dump())
+
+@app.delete("/libros/eliminar_libro")
+async def eliminar_librox_id(eliminar_libro: int):
+	for i in range(len(BOOKS)):
+		if BOOKS[i].id == eliminar_libro:
+			BOOKS.pop(i)
+			break
 
 
 def aumentar_Id_libro(libro:Libro):
