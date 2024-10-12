@@ -1,6 +1,7 @@
-from typing_extensions import Optional
-from fastapi import  Body, FastAPI
+from typing import Optional
+from fastapi import  FastAPI,Path,Query,HTTPException
 from pydantic import BaseModel,Field
+from starlette import status
 
 from Proyect_FastAPI.Proyect1 import books
 app = FastAPI()
@@ -30,7 +31,7 @@ class LibroRequest(BaseModel):
 	description: str = Field(min_length=1,max_length=100)
 	rating: int = Field(gt=0,lt=6)#entre <0,6> entero = [1,5]
 	published_date: int = Field(gt=1999,lt=2031)
-
+##sd
 	model_config = {
 		"json_schema_extra":{
 			"example":{
@@ -55,48 +56,69 @@ BOOKS = [
     Libro(6, 'HP3', 'Author 3', 'Book Description', 1, 2026)
 ]
 
-@app.get("/libros")
+@app.get("/libros", status_code=status.HTTP_200_OK)
 async def mostrar_libros():
 	return BOOKS
 
-@app.get("/libros/{libro_id}/")
-async def obtener_libro_x_id(libro_id:int):
+@app.get("/libros/{libro_id}/", status_code=status.HTTP_200_OK)
+async def obtener_libro_x_id(libro_id:int = Path(gt=0)):
 	for libro in BOOKS:
 		if libro.id == libro_id:
 			return libro
-
-@app.get("/libros/")
-async def obtener_librox_rating(libro_rating:int):
+	raise HTTPException(status_code=404,detail='Item no found')#elementos no encontrado
+	
+ 
+@app.get("/libros/rating", status_code=status.HTTP_200_OK)
+async def obtener_librox_rating(libro_rating:int = Query(gt=0,lt=6)):
 	lib_rating=[]
 	for libro in BOOKS:
 		if libro.rating == libro_rating:
 			lib_rating.append(libro)
 	return lib_rating
 
-@app.get("/libros/{libro_publish}/")
+@app.get("/libros/publicacion", status_code=status.HTTP_200_OK)
+async def obtener_libros(publicacion: int = Query(gt=1999,lt=2031)):
+	lib_publish=[]
+	for libro in BOOKS:
+		if libro.published_date==publicacion:
+			lib_publish.append(libro)
+	return lib_publish
+
+@app.get("/libros/libro/{libro_publish}/")
 async def obtener_librox_publish(libro_publish:int):
 	for libro in BOOKS:
 		if libro.published_date == libro_publish:
 			return libro
 
-@app.post("/crear-libro")
+
+@app.post("/crear-libro",status_code=status.HTTP_201_CREATED)
 async def crear_libro(libro_request: LibroRequest):
-	new_libro = Libro(**libro_request.model_dump())
+	new_libro = Libro(**libro_request.dict())
 	print(type(new_libro))
 	BOOKS.append(aumentar_Id_libro(new_libro))
 
-@app.put("/libros/actualizar_libro")
+@app.put("/libros/actualizar_libro",status_code=status.HTTP_204_NO_CONTENT)
 async def actualizar_libro(libro:LibroRequest):
+	libro_changed = False
 	for i in range(len(BOOKS)):
 		if BOOKS[i].id == libro.id:
-			BOOKS[i] = Libro(**libro.model_dump())
+			BOOKS[i] = Libro(**libro.dict())
+			libro_changed = True
+	if not libro_changed:
+		raise HTTPException(status_code=404,detail="Item not found")
 
-@app.delete("/libros/eliminar_libro")
-async def eliminar_librox_id(eliminar_libro: int):
+
+@app.delete("/libros/{eliminar_libro}",status_code=status.HTTP_204_NO_CONTENT)
+async def eliminar_librox_id(eliminar_libro: int=Path(gt=0)):
+	libro_changed = False
 	for i in range(len(BOOKS)):
 		if BOOKS[i].id == eliminar_libro:
 			BOOKS.pop(i)
+			libro_changed = True
 			break
+	if not libro_changed:
+		raise HTTPException(status_code=404,detail="Item not found")
+
 
 
 def aumentar_Id_libro(libro:Libro):
